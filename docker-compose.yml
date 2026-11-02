@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: transactionguard
+      POSTGRES_PASSWORD: transactionguard
+      POSTGRES_DB: transactionguard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transactionguard -d transactionguard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  migrate:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://transactionguard:transactionguard@postgres:5432/transactionguard
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  api:
+    build: .
+    environment:
+      MODEL_PATH: /app/artifacts/model.joblib
+      MODEL_METADATA_PATH: /app/artifacts/metadata.json
+      DATABASE_URL: postgresql+psycopg://transactionguard:transactionguard@postgres:5432/transactionguard
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  dashboard:
+    build: .
+    profiles: ["dashboard"]
+    command: ["streamlit", "run", "dashboard/main.py", "--server.address=0.0.0.0"]
+    environment:
+      API_URL: http://api:8000
+      REPORTS_DIR: /app/reports
+    volumes:
+      - ./reports:/app/reports:ro
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  postgres_data:

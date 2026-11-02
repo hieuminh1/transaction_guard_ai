@@ -1,0 +1,6 @@
+{
+  "transactions": [
+    {"transaction_id": "demo-1001", "step": 42, "type": "TRANSFER", "amount": 12000.0, "oldbalanceOrg": 15000.0},
+    {"transaction_id": "demo-1002", "step": 43, "type": "PAYMENT", "amount": 20.0, "oldbalanceOrg": 200.0}
+  ]
+}

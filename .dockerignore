@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+.idea
+.aws
+.codex
+.agents
+data
+artifacts
+reports
+mlruns
+__pycache__
+.pytest_cache
+*.db
